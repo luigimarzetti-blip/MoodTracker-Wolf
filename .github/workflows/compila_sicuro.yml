@@ -21,7 +21,7 @@ jobs:
       - name: Installa i programmi Linux necessari
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev openjdk-17-jdk unzip zip
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev openjdk-17-jdk unzip zip
           pip install buildozer cython==0.29.33 virtualenv
 
       - name: Compila l'APK (Può richiedere 15 min)
