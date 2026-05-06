@@ -1,0 +1,27 @@
+name: Compila APK con Buildozer
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Compila con Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: master
+
+      - name: Salva l'APK finale
+        uses: actions/upload-artifact@v4
+        with:
+          name: La_Mia_App_APK
+          path: ${{ steps.buildozer.outputs.filename }}
