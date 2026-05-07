@@ -7,28 +7,35 @@ on:
 
 jobs:
   build:
-    # Cambiamo da 'latest' a '22.04' per stabilità
     runs-on: ubuntu-22.04
 
     steps:
       - name: Scarica il codice
         uses: actions/checkout@v4
 
-      - name: Setup Java e Dipendenze
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Installa Dipendenze Sistema
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk build-essential git python3-pip ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip
+          sudo apt-get install -y build-essential git python3-pip ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-y libavformat-dev libavcodec-dev zlib1g-dev unzip zip
 
-      - name: Installa Buildozer
+      - name: Installa Buildozer e Cython
         run: |
           pip3 install --user --upgrade pip
-          pip3 install --user buildozer cython==0.29.33
+          pip3 install --user buildozer cython==0.29.33 virtualenv
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Compila APK
+      - name: Pulizia e Compilazione
         run: |
-          # Usiamo il flag --warn per vedere meglio gli errori se fallisce
-          buildozer -v android debug
+          # Eliminiamo eventuali residui di compilazioni fallite
+          rm -rf .buildozer
+          # Compiliamo accettando le licenze
+          yes | buildozer -v android debug
           
       - name: Salva APK
         uses: actions/upload-artifact@v4
