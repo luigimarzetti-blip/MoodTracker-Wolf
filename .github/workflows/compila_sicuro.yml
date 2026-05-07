@@ -18,35 +18,33 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Installazione Dipendenze Sistema
+      - name: Installazione Dipendenze
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential git python3-dev autoconf automake libtool \
-            pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev zip unzip
+          sudo apt-get install -y build-essential git python3-dev autoconf automake libtool \
+            pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev zip unzip
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Installazione Buildozer e Cython
+      - name: Installazione Buildozer
         run: |
           pip install --upgrade pip
           pip install "cython<3.0.0" buildozer
 
-      - name: Pulizia Cache e Build APK
+      - name: Build APK
+        id: build
         run: |
-          # Questo rimuove vecchi file che potrebbero bloccare tutto
           buildozer android clean
-          buildozer -v android debug
+          buildozer -v android debug || echo "BUILD_FAILED=true" >> $GITHUB_ENV
         env:
           ACCEPT_SDK_LICENSE: "yes"
 
-      - name: Caricamento APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: MoodTracker-APK
-          path: bin/*.apk
+      - name: Mostra Log in caso di Errore
+        if: env.BUILD_FAILED == 'true'
+        run: |
+          echo "--- ULTIME 200 RIGHE DEL LOG ---"
+          tail -n 200 .buildozer/android/platform/build-arm64-v8a/build.log || echo "Log non trovato"
+          exit 1
