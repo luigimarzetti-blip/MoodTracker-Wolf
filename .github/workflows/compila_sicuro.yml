@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # <--- IMPORTANTE: Usiamo la 22.04 perché la 24.04 rompe Buildozer
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout del codice
@@ -34,14 +34,18 @@ jobs:
       - name: Installazione Buildozer e Cython
         run: |
           pip install --upgrade pip
-          pip install "cython<3.0.0" buildozer  # Cython 3 spesso rompe kivy/p4a
+          pip install "cython<3.0.0" buildozer
 
-      - name: Build APK con Buildozer
-        run: buildozer -v android debug
+      - name: Pulizia Cache e Build APK
+        run: |
+          # Questo rimuove vecchi file che potrebbero bloccare tutto
+          buildozer android clean
+          buildozer -v android debug
         env:
           ACCEPT_SDK_LICENSE: "yes"
 
       - name: Caricamento APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: MoodTracker-APK
