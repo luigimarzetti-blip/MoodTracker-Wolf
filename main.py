@@ -14,7 +14,6 @@ from kivy.utils import get_color_from_hex
 from kivy.core.window import Window
 from collections import Counter
 
-# --- IMPORT PUBBLICITÀ CON PROTEZIONE ---
 try:
     from kivmob import KivMob, TestIds
     KIVMOB_DISPONIBILE = True
@@ -25,45 +24,27 @@ class IconScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
-        
         layout.add_widget(Label(text="Come ti senti oggi?", font_size='24sp', bold=True, size_hint_y=0.15))
 
         grid = GridLayout(cols=2, spacing=15, size_hint_y=0.6)
-        
-        # Dizionario umori: Nome -> Nome file immagine
         umori = {
-            "Radioso": "radioso.png", 
-            "Sereno": "sereno.png",
-            "Così così": "cosi_cosi.png", 
-            "Triste": "triste.png",
-            "Rabbioso": "rabbioso.png", 
-            "Stanco": "stanco.png"
+            "Radioso": "radioso.png", "Sereno": "sereno.png",
+            "Così così": "cosi_cosi.png", "Triste": "triste.png",
+            "Rabbioso": "rabbioso.png", "Stanco": "stanco.png"
         }
 
         for nome, img in umori.items():
-            # Controllo se l'immagine esiste davvero nella cartella
             if os.path.exists(img):
                 btn = Button(background_normal=img)
             else:
-                # Se l'immagine manca, crea un bottone di emergenza con testo
                 btn = Button(text=nome, background_color=get_color_from_hex('#3E3E3E'))
-            
             btn.bind(on_release=lambda x, n=nome: self.vai_a_dettagli(n))
             grid.add_widget(btn)
         
         layout.add_widget(grid)
-
-        # Tasto statistiche con colore oro
-        btn_stats = Button(
-            text="VEDI STATISTICHE", 
-            size_hint_y=0.15, 
-            background_color=get_color_from_hex('#FFD700'), 
-            color=(0,0,0,1), 
-            bold=True
-        )
+        btn_stats = Button(text="VEDI STATISTICHE", size_hint_y=0.15, background_color=get_color_from_hex('#FFD700'), color=(0,0,0,1), bold=True)
         btn_stats.bind(on_release=lambda x: App.get_running_app().mostra_statistiche())
         layout.add_widget(btn_stats)
-
         self.add_widget(layout)
 
     def vai_a_dettagli(self, nome_umore):
@@ -75,103 +56,61 @@ class DetailScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
-        
         self.lbl_info = Label(text="Dettagli Umore", font_size='20sp', size_hint_y=0.1)
         layout.add_widget(self.lbl_info)
-
-        layout.add_widget(Label(text="Intensità (1-10):", size_hint_y=0.1))
         self.slider = Slider(min=1, max=10, value=5, step=1, size_hint_y=0.1)
         layout.add_widget(self.slider)
-
-        self.input_note = TextInput(hint_text="Aggiungi una nota...", multiline=True, size_hint_y=0.4)
+        self.input_note = TextInput(hint_text="Nota...", multiline=True, size_hint_y=0.4)
         layout.add_widget(self.input_note)
-
-        btn_box = BoxLayout(size_hint_y=0.2, spacing=10)
-        btn_salva = Button(text="SALVA", background_color=get_color_from_hex('#4CAF50'), bold=True)
-        btn_salva.bind(on_press=self.salva_e_torna)
         
+        btn_box = BoxLayout(size_hint_y=0.2, spacing=10)
+        btn_salva = Button(text="SALVA", background_color=get_color_from_hex('#4CAF50'))
+        btn_salva.bind(on_press=self.salva_e_torna)
         btn_back = Button(text="ANNULLA", background_color=get_color_from_hex('#808080'))
-        btn_back.bind(on_press=self.annulla)
-
-        btn_box.add_widget(btn_back)
-        btn_box.add_widget(btn_salva)
+        btn_back.bind(on_press=lambda x: setattr(self.manager, 'current', 'icons'))
+        btn_box.add_widget(btn_back); btn_box.add_widget(btn_salva)
         layout.add_widget(btn_box)
         self.add_widget(layout)
-
-    def annulla(self, instance):
-        self.manager.current = 'icons'
 
     def salva_e_torna(self, instance):
         app = App.get_running_app()
         app.salva_dati(app.umore_scelto, int(self.slider.value), self.input_note.text)
-        self.input_note.text = ""
-        self.manager.current = 'icons'
+        self.input_note.text = ""; self.manager.current = 'icons'
 
 class MoodTrackerApp(App):
     def build(self):
         Window.clearcolor = get_color_from_hex('#1A1A2E')
-        # Percorso sicuro per salvare i dati su Android
         self.file_path = os.path.join(self.user_data_dir, "storia_umore.json")
         self.umore_scelto = ""
-        
-        # --- CONFIGURAZIONE PUBBLICITÀ ---
         if KIVMOB_DISPONIBILE:
             try:
-                # ID App reale
-                self.ads = KivMob("ca-app-pub-2537033671132924~2254358352") 
-                # ID Banner reale
+                self.ads = KivMob("ca-app-pub-2537033671132924~2254358352")
                 self.ads.new_banner("ca-app-pub-2537033671132924/3160863261", top_pos=False)
-                self.ads.request_banner()
-                self.ads.show_banner()
-            except Exception as e:
-                print(f"Errore caricamento Ads: {e}")
-
+                self.ads.request_banner(); self.ads.show_banner()
+            except: pass
         sm = ScreenManager()
-        sm.add_widget(IconScreen(name='icons'))
-        sm.add_widget(DetailScreen(name='details'))
+        sm.add_widget(IconScreen(name='icons')); sm.add_widget(DetailScreen(name='details'))
         return sm
 
     def leggi_dati(self):
-        if not os.path.exists(self.file_path): 
-            return []
+        if not os.path.exists(self.file_path): return []
         try:
-            with open(self.file_path, 'r') as f: 
-                return json.load(f)
-        except: 
-            return []
+            with open(self.file_path, 'r') as f: return json.load(f)
+        except: return []
 
     def salva_dati(self, icona, intensita, nota):
         dati = self.leggi_dati()
-        dati.append({
-            "data": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "umore": icona,
-            "intensita": intensita,
-            "nota": nota
-        })
-        try:
-            with open(self.file_path, 'w') as f:
-                json.dump(dati, f, indent=4)
-        except Exception as e:
-            print(f"Errore scrittura file: {e}")
+        dati.append({"data": datetime.now().strftime("%Y-%m-%d %H:%M"), "umore": icona, "intensita": intensita, "nota": nota})
+        with open(self.file_path, 'w') as f: json.dump(dati, f, indent=4)
 
     def mostra_statistiche(self):
         dati = self.leggi_dati()
-        if not dati:
-            testo = "Nessun dato registrato."
-        else:
-            conteggio = Counter([d['umore'] for d in dati])
-            testo = f"Registrazioni: {len(dati)}\n\n"
-            for u, v in conteggio.items():
-                testo += f"• {u}: {v}\n"
-
-        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        content.add_widget(Label(text=testo, halign='center'))
-        btn = Button(text="CHIUDI", size_hint_y=0.2, background_color=get_color_from_hex('#2196F3'))
-        
-        popup = Popup(title="Statistiche Umore", content=content, size_hint=(0.85, 0.7))
-        btn.bind(on_release=popup.dismiss)
-        content.add_widget(btn)
-        popup.open()
+        testo = "Nessun dato." if not dati else f"Totale: {len(dati)}\n\n" + "\n".join([f"• {k}: {v}" for k, v in Counter([d['umore'] for d in dati]).items()])
+        content = BoxLayout(orientation='vertical', padding=10)
+        content.add_widget(Label(text=testo))
+        btn = Button(text="CHIUDI", size_hint_y=0.2)
+        popup = Popup(title="Stats", content=content, size_hint=(0.85, 0.7))
+        btn.bind(on_release=popup.dismiss); content.add_widget(btn); popup.open()
 
 if __name__ == '__main__':
     MoodTrackerApp().run()
