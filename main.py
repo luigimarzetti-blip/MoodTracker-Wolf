@@ -117,7 +117,47 @@ class MoodTrackerApp(App):
 
     def on_start(self):
         # La pubblicità viene caricata DOPO che l'app si è disegnata per evitare crash
+        # QUI C'ERA L'ERRORE: ORA LA RIGA È COMPLETA E CHIUSA CORRETTAMENTE
         if KIVMOB_DISPONIBILE:
             try:
                 self.ads = KivMob("ca-app-pub-2537033671132924~2254358352") 
-                self.ads.new_banner("ca-app-pub-25
+                self.ads.new_banner("ca-app-pub-2537033671132924/3160863261", top_pos=False)
+                self.ads.request_banner()
+                self.ads.show_banner()
+            except Exception as e:
+                print(f"Errore Ads: {e}")
+
+    def leggi_dati(self):
+        if not os.path.exists(self.file_path): return []
+        try:
+            with open(self.file_path, 'r') as f: return json.load(f)
+        except: return []
+
+    def salva_dati(self, icona, intensita, nota):
+        dati = self.leggi_dati()
+        dati.append({"data": datetime.now().strftime("%Y-%m-%d %H:%M"), "umore": icona, "intensita": intensita, "nota": nota})
+        try:
+            with open(self.file_path, 'w') as f: json.dump(dati, f, indent=4)
+        except:
+            pass
+
+    def mostra_statistiche(self):
+        dati = self.leggi_dati()
+        if not dati:
+            testo = "Nessun dato registrato."
+        else:
+            conteggio = Counter([d['umore'] for d in dati])
+            testo = f"Registrazioni: {len(dati)}\n\n"
+            for u, v in conteggio.items():
+                testo += f"• {u}: {v}\n"
+        
+        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        content.add_widget(Label(text=testo))
+        btn = Button(text="CHIUDI", size_hint_y=0.2)
+        popup = Popup(title="Statistiche Umore", content=content, size_hint=(0.85, 0.7))
+        btn.bind(on_release=popup.dismiss)
+        content.add_widget(btn)
+        popup.open()
+
+if __name__ == '__main__':
+    MoodTrackerApp().run()
