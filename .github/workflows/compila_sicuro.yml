@@ -1,13 +1,49 @@
-      - name: Installazione Buildozer e P4A
+name: Compila APK Sicuro
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Installazione Dipendenze Sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git python3-dev autoconf automake libtool \
+            pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev zip unzip
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installazione Buildozer e Cython
         run: |
           pip install --upgrade pip
           pip install "cython<3.0.0" buildozer
-          # Installiamo p4a separatamente per evitare il FileNotFoundError
-          pip install git+https://github.com/kivy/python-for-android.git
 
-      - name: Build APK
+      - name: Pre-creazione cartelle e Build
         run: |
-          # Non usiamo più "clean" qui, lo lasciamo gestire a Buildozer
+          # Questo risolve il FileNotFoundError forzando la creazione delle cartelle
+          mkdir -p .buildozer/android/platform
           buildozer -v android debug
         env:
           ACCEPT_SDK_LICENSE: "yes"
+
+      - name: Caricamento APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MoodTracker-APK
+          path: bin/*.apk
