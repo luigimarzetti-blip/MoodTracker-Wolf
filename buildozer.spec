@@ -5,20 +5,21 @@ package.domain = org.luigimarzetti
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json
 
-# Ho rimosso kivmob temporaneamente per testare la stabilità
-requirements = python3,kivy==2.3.0,android,pyjnius
+# Riduciamo al minimo indispensabile. Se compila così, aggiungeremo il resto dopo.
+requirements = python3,kivy==2.3.0
 
 orientation = portrait
 fullscreen = 0
 
-# Android specific (API 34 è il minimo per il Play Store nel 2026)
+# Android specific
 android.api = 34
 android.minapi = 21
+# Forziamo una versione specifica dell'NDK che sappiamo funzionare
 android.ndk = 25b
 android.skip_update = False
 android.accept_sdk_license = True
 
-# Compiliamo solo per arm64 per velocizzare il test su GitHub
+# Compiliamo solo per una architettura per non farlo durare ore
 android.archs = arm64-v8a
 
 [buildozer]
