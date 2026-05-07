@@ -1,20 +1,11 @@
 [app]
-title = MoodTracker Wolf
-package.name = moodtrackerwolf
-package.domain = org.luigimarzetti
-source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,json
-
-# RIGA MANCANTE AGGIUNTA QUI:
+# ... (il resto rimane uguale)
 version = 0.1
 
-# Requisiti minimi per testare se compila
+# Requisiti
 requirements = python3,kivy==2.3.0,android,pyjnius
 
-orientation = portrait
-fullscreen = 0
-
-# Android specific
+# Android settings - Svuota i percorsi se avevi messo roba strana
 android.api = 34
 android.minapi = 21
 android.ndk = 25b
@@ -24,4 +15,3 @@ android.archs = arm64-v8a
 
 [buildozer]
 log_level = 2
-warn_on_root = 1
