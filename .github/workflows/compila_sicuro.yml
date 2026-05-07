@@ -7,15 +7,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Scarica il codice
         uses: actions/checkout@v4
 
-      - name: Configura Mirror Veloci e Java
+      - name: Configura Mirror e Java
         run: |
-          # Cambia i mirror lenti con quelli principali
           sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk
@@ -25,8 +24,13 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip
           pip3 install --user --upgrade pip
           pip3 install --user buildozer cython==0.29.33 virtualenv
-          # Aggiunge Buildozer al comando di sistema
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Compila l'APK (Log Dettagliato)
+      - name: Compila l'APK
         run: buildozer android debug
+
+      - name: Salva APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: App_MoodTracker_APK
+          path: bin/*.apk
