@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04  # Cambiato a 20.04 per massima stabilità
+    runs-on:  ubuntu-latest # Cambiato a 20.04 per massima stabilità
 
     steps:
       - name: Scarica il codice
