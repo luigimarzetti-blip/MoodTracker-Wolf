@@ -5,27 +5,21 @@ package.domain = org.luigimarzetti
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json
 
-# ATTENZIONE: kivmob richiede spesso permessi specifici e internet
-requirements = python3,kivy==2.3.0,android,pyjnius,kivmob
+# Ho rimosso kivmob temporaneamente per testare la stabilità
+requirements = python3,kivy==2.3.0,android,pyjnius
 
 orientation = portrait
 fullscreen = 0
 
-# Android specific
+# Android specific (API 34 è il minimo per il Play Store nel 2026)
 android.api = 34
 android.minapi = 21
-# Lasciamo vuoti questi per farli gestire a Buildozer nel cloud
-# android.sdk_path = 
-# android.ndk_path = 
+android.ndk = 25b
+android.skip_update = False
+android.accept_sdk_license = True
 
-# Architetture necessarie per il Play Store e test moderni
-android.archs = arm64-v8a, armeabi-v7a
-
-# Permessi necessari per KivMob/AdMob
-android.permissions = INTERNET, ACCESS_NETWORK_STATE
-
-# (Opzionale) Se usi KivMob, inserisci qui l'App ID di test o reale
-# android.meta_data = com.google.android.gms.ads.APPLICATION_ID=ca-app-pub-3940256099942544~3347511713
+# Compiliamo solo per arm64 per velocizzare il test su GitHub
+android.archs = arm64-v8a
 
 [buildozer]
 log_level = 2
