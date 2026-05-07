@@ -36,14 +36,12 @@ class IconScreen(Screen):
         }
 
         for nome, img in umori.items():
-            # Tolto il testo (text=nome) per non vederlo due volte sopra l'icona
             btn = Button(background_normal=img) 
             btn.bind(on_release=lambda x, n=nome: self.vai_a_dettagli(n))
             grid.add_widget(btn)
         
         layout.add_widget(grid)
 
-        # AGGIUNTO TASTO STATISTICHE
         btn_stats = Button(text="VEDI STATISTICHE", size_hint_y=0.15, background_color=get_color_from_hex('#FFD700'), color=(0,0,0,1), bold=True)
         btn_stats.bind(on_release=lambda x: App.get_running_app().mostra_statistiche())
         layout.add_widget(btn_stats)
@@ -94,16 +92,18 @@ class DetailScreen(Screen):
 class MoodTrackerApp(App):
     def build(self):
         Window.clearcolor = get_color_from_hex('#1A1A2E')
-        self.file_path = "storia_umore.json"
+        self.file_path = os.path.join(self.user_data_dir, "storia_umore.json") # CORREZIONE: Percorso sicuro per Android
         self.umore_scelto = ""
         
-        # --- LOGICA PUBBLICITÀ ---
+        # --- LOGICA PUBBLICITÀ (Tuo ID Reale) ---
         if KIVMOB_DISPONIBILE:
-            # Sostituisci con il tuo ID reale se lo hai
-            self.ads = KivMob("ca-app-pub-3940256099942544~3347511713") 
-            self.ads.new_banner(TestIds.BANNER, top_pos=False)
-            self.ads.request_banner()
-            self.ads.show_banner()
+            try:
+                self.ads = KivMob("ca-app-pub-2537033671132924~2254358352") 
+                self.ads.new_banner("ca-app-pub-2537033671132924/3160863261", top_pos=False) # Inserito ID banner reale
+                self.ads.request_banner()
+                self.ads.show_banner()
+            except Exception as e:
+                print(f"Errore Ads: {e}")
 
         sm = ScreenManager()
         sm.add_widget(IconScreen(name='icons'))
@@ -124,8 +124,11 @@ class MoodTrackerApp(App):
             "intensita": intensita,
             "nota": nota
         })
-        with open(self.file_path, 'w') as f:
-            json.dump(dati, f, indent=4)
+        try:
+            with open(self.file_path, 'w') as f:
+                json.dump(dati, f, indent=4)
+        except Exception as e:
+            print(f"Errore Salvataggio: {e}")
 
     def mostra_statistiche(self):
         dati = self.leggi_dati()
