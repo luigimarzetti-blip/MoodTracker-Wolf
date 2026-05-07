@@ -7,33 +7,31 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Cambiamo da 'latest' a '22.04' per stabilità
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Scarica il codice
         uses: actions/checkout@v4
 
-      - name: Configura Mirror e Java
+      - name: Setup Java e Dipendenze
         run: |
-          sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk
+          sudo apt-get install -y openjdk-17-jdk build-essential git python3-pip ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip
 
-      - name: Installa Dipendenze Python
+      - name: Installa Buildozer
         run: |
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip
           pip3 install --user --upgrade pip
-          pip3 install --user buildozer cython==0.29.33 virtualenv
+          pip3 install --user buildozer cython==0.29.33
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Accetta Licenze Android e Compila
+      - name: Compila APK
         run: |
-          # Questo comando forza l'accettazione delle licenze prima di compilare
-          yes | buildozer android debug
+          # Usiamo il flag --warn per vedere meglio gli errori se fallisce
+          buildozer -v android debug
           
       - name: Salva APK
         uses: actions/upload-artifact@v4
         with:
           name: App_MoodTracker_APK
           path: bin/*.apk
-
