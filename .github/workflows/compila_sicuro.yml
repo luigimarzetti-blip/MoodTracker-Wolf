@@ -7,17 +7,17 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # FORZIAMO UBUNTU 22.04 per stabilità
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Scarica codice
         uses: actions/checkout@v4
 
-      - name: Configura Mirror e Java
+      - name: Configura Sistema e Java
         run: |
-          sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip libtinfo5
 
       - name: Installa Buildozer
         run: |
@@ -25,10 +25,11 @@ jobs:
           pip3 install --user buildozer cython==0.29.33 virtualenv
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Compila l'APK (Verbose)
+      - name: Compila l'APK
         run: |
           export JAVA_OPTS="-Xmx4g"
-          buildozer -v android debug
+          # Usiamo "yes" per accettare automaticamente tutte le licenze Android se richieste
+          yes | buildozer -v android debug
 
       - name: Carica APK
         uses: actions/upload-artifact@v4
