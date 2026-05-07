@@ -10,27 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Scarica il codice
+      - name: Scarica codice
         uses: actions/checkout@v4
 
       - name: Configura Mirror e Java
         run: |
           sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openjdk-17-jdk build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip
 
-      - name: Installa Dipendenze Python
+      - name: Installa Buildozer
         run: |
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git python3 python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev unzip zip
           pip3 install --user --upgrade pip
           pip3 install --user buildozer cython==0.29.33 virtualenv
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Compila l'APK
-        run: buildozer android debug
+      - name: Compila l'APK (Verbose)
+        run: |
+          export JAVA_OPTS="-Xmx4g"
+          buildozer -v android debug
 
-      - name: Salva APK
+      - name: Carica APK
         uses: actions/upload-artifact@v4
         with:
-          name: App_MoodTracker_APK
+          name: MoodTracker-Package
           path: bin/*.apk
