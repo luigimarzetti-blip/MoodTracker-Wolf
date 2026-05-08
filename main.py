@@ -13,6 +13,8 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.image import Image
 from kivy.uix.widget import Widget
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.graphics import Color, Line, Ellipse
 from kivy.utils import get_color_from_hex
 from kivy.core.window import Window
 from collections import Counter
@@ -24,15 +26,97 @@ try:
 except ImportError:
     KIVMOB_DISPONIBILE = False
 
+# --- IL NUOVO GRAFICO PERSONALIZZATO ---
+class MoodGraph(RelativeLayout):
+    def __init__(self, dati, **kwargs):
+        super().__init__(**kwargs)
+        self.dati = dati
+        # Ordine dal basso verso l'alto (dal peggiore al migliore)
+        self.umori_ordinati = ["Rabbioso", "Stanco", "Triste", "Così così", "Sereno", "Radioso"]
+        self.labels = []
+        
+        # Creiamo le etichette di testo per l'asse Y
+        for u in self.umori_ordinati:
+            lbl = Label(text=u, size_hint=(None, None), size=(80, 30), font_size='12sp', halign='right')
+            self.add_widget(lbl)
+            self.labels.append((u, lbl))
+            
+        self.bind(size=self.disegna_grafico, pos=self.disegna_grafico)
+
+    def disegna_grafico(self, *args):
+        self.canvas.clear()
+        
+        if self.height <= 0 or self.width <= 0:
+            return
+
+        margine_sinistro = 90
+        margine_destro = 20
+        spazio_x = self.width - margine_sinistro - margine_destro
+        
+        # Altezza dedicata a ogni umore (asse Y)
+        step_y = self.height / len(self.umori_ordinati)
+        
+        with self.canvas:
+            # 1. Posizioniamo le scritte e le linee di griglia orizzontali
+            for i, (umore, lbl) in enumerate(self.labels):
+                y_centro = (i * step_y) + (step_y / 2)
+                lbl.pos = (0, y_centro - 15)
+                
+                Color(1, 1, 1, 0.1) # Griglia semitrasparente
+                Line(points=[margine_sinistro, y_centro, self.width - margine_destro, y_centro])
+            
+            if not self.dati:
+                return
+
+            punti_linea = []
+            info_punti = []
+            
+            # 2. Calcoliamo la posizione di ogni singola registrazione
+            for i, record in enumerate(self.dati):
+                umore = record.get("umore", "Così così")
+                intensita = record.get("intensita", 5)
+                
+                # Trova l'altezza sull'asse Y in base all'umore
+                try:
+                    indice_y = self.umori_ordinati.index(umore)
+                except ValueError:
+                    indice_y = 3
+                    
+                y = (indice_y * step_y) + (step_y / 2)
+                
+                # Trova la posizione sull'asse X (cronologia)
+                if len(self.dati) > 1:
+                    x = margine_sinistro + (i * (spazio_x / (len(self.dati) - 1)))
+                else:
+                    x = margine_sinistro + (spazio_x / 2)
+                    
+                punti_linea.extend([x, y])
+                
+                # Regola Pallini: Raggio e Colore in base all'intensità
+                raggio = 9 if intensita > 5 else 4
+                info_punti.append((x, y, raggio, intensita))
+
+            # 3. Disegniamo la linea di collegamento azzurra
+            if len(punti_linea) >= 4:
+                Color(0.2, 0.6, 1, 1) 
+                Line(points=punti_linea, width=1.5)
+                
+            # 4. Disegniamo i pallini finali sopra la linea
+            for x, y, r, intensita in info_punti:
+                if intensita > 5:
+                    Color(0.2, 0.8, 0.2, 1) # Verde acceso per intensità > 5
+                else:
+                    Color(0.7, 0.7, 0.7, 1) # Grigio per intensità <= 5
+                Ellipse(pos=(x - r, y - r), size=(r * 2, r * 2))
+
+# --- SCHERMATE DELL'APP ---
 class IconScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=[20, 20, 20, 10], spacing=15)
         
-        # Titolo
         layout.add_widget(Label(text="Come ti senti oggi?", font_size='24sp', bold=True, size_hint_y=0.1))
 
-        # --- SCROLLVIEW PER LE ICONE ---
         scroll = ScrollView(size_hint_y=0.65)
         grid = GridLayout(cols=2, spacing=20, size_hint_y=None, padding=10)
         grid.bind(minimum_height=grid.setter('height'))
@@ -44,15 +128,12 @@ class IconScreen(Screen):
         }
 
         for nome, img in umori.items():
-            # Creiamo un Box per ogni umore per non schiacciare l'immagine
             box_bottone = BoxLayout(orientation='vertical', size_hint_y=None, height=300, spacing=5)
             
             if os.path.exists(img):
-                # Usiamo il widget Image dentro il bottone per mantenere le proporzioni
                 btn_img = Button(background_normal='', background_color=(0,0,0,0))
                 foto = Image(source=img, allow_stretch=True, keep_ratio=True)
                 btn_img.add_widget(foto)
-                # Centriamo l'immagine nel bottone
                 foto.center = btn_img.center
                 btn_img.bind(size=lambda instance, value, f=foto: setattr(f, 'size', value))
                 btn_img.bind(pos=lambda instance, value, f=foto: setattr(f, 'pos', value))
@@ -68,7 +149,6 @@ class IconScreen(Screen):
         scroll.add_widget(grid)
         layout.add_widget(scroll)
 
-        # --- TASTO STATISTICHE ---
         self.btn_stats = Button(
             text="VEDI STATISTICHE", 
             size_hint_y=0.12, 
@@ -79,10 +159,7 @@ class IconScreen(Screen):
         self.btn_stats.bind(on_release=lambda x: App.get_running_app().mostra_statistiche())
         layout.add_widget(self.btn_stats)
 
-        # --- SPAZIATORE PER IL BANNER ADMOB ---
-        # Aggiungiamo un vuoto in fondo così il banner non copre il tasto statistiche
         layout.add_widget(Widget(size_hint_y=None, height=120))
-
         self.add_widget(layout)
 
     def vai_a_dettagli(self, nome_umore):
@@ -132,8 +209,7 @@ class MoodTrackerApp(App):
     def on_start(self):
         if KIVMOB_DISPONIBILE:
             try:
-                # --- USIAMO ID DI TEST PER VEDERE SE FUNZIONA ---
-                # ID Test AdMob generico (Funziona sempre per i test)
+                # Banner di test di Google
                 self.ads = KivMob("ca-app-pub-3940256099942544~3347511713") 
                 self.ads.new_banner("ca-app-pub-3940256099942544/6300978111", top_pos=False)
                 self.ads.request_banner()
@@ -154,11 +230,24 @@ class MoodTrackerApp(App):
 
     def mostra_statistiche(self):
         dati = self.leggi_dati()
-        testo = "Nessun dato." if not dati else f"Registrazioni: {len(dati)}\n\n" + "\n".join([f"• {u}: {v}" for u, v in Counter([d['umore'] for d in dati]).items()])
+        
         content = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        content.add_widget(Label(text=testo))
-        btn = Button(text="CHIUDI", size_hint_y=0.2, background_color=get_color_from_hex('#2196F3'))
-        popup = Popup(title="Statistiche Umore", content=content, size_hint=(0.85, 0.7))
+        
+        if not dati:
+            content.add_widget(Label(text="Nessun dato registrato.", halign='center'))
+        else:
+            # Info di testo in cima
+            info_testo = f"Registrazioni totali: {len(dati)}\nPallino Verde = Forte (>5) | Grigio = Lieve (<=5)"
+            content.add_widget(Label(text=info_testo, size_hint_y=0.15, font_size='14sp', halign='center'))
+            
+            # IL NUOVO GRAFICO VISIVO IN MEZZO
+            grafico = MoodGraph(dati, size_hint_y=0.7)
+            content.add_widget(grafico)
+            
+        btn = Button(text="CHIUDI", size_hint_y=0.15, background_color=get_color_from_hex('#2196F3'))
+        
+        # Facciamo il popup più grande per far respirare il grafico
+        popup = Popup(title="Statistiche Umore", content=content, size_hint=(0.95, 0.85))
         btn.bind(on_release=popup.dismiss)
         content.add_widget(btn)
         popup.open()
